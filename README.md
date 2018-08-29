@@ -4,7 +4,7 @@ kotlinc main.kt -include-runtime -d main.jar
 
 in order to run the code please use the following:
 
-java -jar main.jar 0 <packagename> <name> <layoutname>
+java -jar main.jar 0 <<packagename>> <<name>> <<layoutname>>
 ex:  java -jar main.jar 0 ae.adnoc.gov.ui lpg_item_details fragment_lpg_item_details
 
 where: 
