@@ -3,31 +3,60 @@ import java.io.FileNotFoundException
 import java.io.FileOutputStream
 
 fun main(args: Array<String>) {
+
     // arg[0]: isFragment 0:false else 1
     // arg[1]: package name
     // arg[2]: file name
     //args[3]: layout name
-    //args[4]: fragment name
 
-    createInteractor(args[2], args[1])
-    createPresenter(args[2], args[1])
-    createView(args[2], args[1], args[3])
-    createActivityModule(args[2], args[1])
-    if (args[0]!="0")
-        createFramentProv(args[4],args[1] )
+    var isFragment=args[0]
+    var strPack=args[1]
+    var strFile=args[2]
+    var layoutName=args[3]
+
+    var strWithout_=strFile.replace("_", "")
+    var packageName=strPack+"."+strWithout_
+
+    val words = strFile.split("_").toMutableList()
+    var output = ""
+    for(word in words){
+        output += word.capitalize() +" "
+    }
+    output = output.trim()
+    var fileName=output.replace(" ","")
+
+
+    var currentPath=createPackage(strWithout_)
+    createInteractor(fileName, packageName, currentPath)
+    createPresenter(fileName, packageName, currentPath)
+    createView(fileName, packageName, currentPath, layoutName, isFragment)
+    createActivityModule(fileName, packageName, currentPath)
+
+    if (isFragment!="0")
+        createFramentProv(fileName, packageName, currentPath)
+
 }
 
-fun createInteractor(requiredName:String, packName:String) {
+fun createPackage(fileName:String): String{
+    val currentPath = System.getProperty("user.dir")
+    val pathName= currentPath+"\\"+fileName
+    val wallpaperDirectory = File(pathName)
+    // have the object build the directory structure, if needed.
+    wallpaperDirectory.mkdirs()
+    return pathName
+}
+
+fun createInteractor(requiredFileName:String, packName:String, currentPath:String) {
     var usedPackageName = packName+".interactor";
+
     var basePack= packName.substring(0,packName.indexOf(".ui"))
 
 
-    var filename = requiredName+"InteractorImpl.kt"
+    var filename = requiredFileName+"InteractorImpl.kt"
 
-    var file2name = "I"+requiredName+"Interactor.kt"
+    var file2name = "I"+requiredFileName+"Interactor.kt"
     // create a File object for the parent directory
-    val currentPath = System.getProperty("user.dir")
-    val pathName= currentPath+"/Interactor"
+    val pathName= currentPath+"/interactor"
     val wallpaperDirectory = File(pathName)
     // have the object build the directory structure, if needed.
     wallpaperDirectory.mkdirs()
@@ -43,6 +72,7 @@ fun createInteractor(requiredName:String, packName:String) {
         e.printStackTrace()
     }
 
+
     //fill the files
 
     outputFile.printWriter().use { out ->
@@ -52,26 +82,25 @@ fun createInteractor(requiredName:String, packName:String) {
         out.println("import "+basePack+".ui.base.interactor.BaseInteractorImpl")
         out.println("import javax.inject.Inject\n")
 
-        out.println("class "+requiredName+"InteractorImpl "+ "@Inject internal constructor(preferenceHelper: PreferenceHelper, apiHelper: ApiHelper) : BaseInteractorImpl(preferenceHelper = preferenceHelper, apiHelper = apiHelper), IGasolineInteractor {\n}")
+        out.println("class "+requiredFileName+"InteractorImpl "+ "@Inject internal constructor(preferenceHelper: PreferenceHelper, apiHelper: ApiHelper) : BaseInteractorImpl(preferenceHelper = preferenceHelper, apiHelper = apiHelper), I"+requiredFileName+"Interactor {\n}")
     }
 
     output2File.printWriter().use { out ->
         out.println("package "+usedPackageName)
         out.println("\nimport "+basePack+".ui.base.interactor.IInteractor\n")
 
-        out.println("interface "+"I"+requiredName+"Interactor "+ ": IInteractor {\n}")
+        out.println("interface "+"I"+requiredFileName+"Interactor "+ ": IInteractor {\n}")
     }
 }
-fun createPresenter(requiredName:String, packName:String) {
+
+fun createPresenter(requiredFileName:String, packName:String, currentPath: String) {
     var basePack= packName.substring(0,packName.indexOf(".ui"))
     var usedPackageName = packName+".presenter";
 
-    var filename = requiredName+"PresenterImpl.kt"
+    var filename = requiredFileName+"PresenterImpl.kt"
 
-    var file2name = "I"+requiredName+"Presenter.kt"
+    var file2name = "I"+requiredFileName+"Presenter.kt"
     // create a File object for the parent directory
-    val currentPath = System.getProperty("user.dir")
-
     val pathName= currentPath+"/presenter"
     val wallpaperDirectory = File(pathName)
     // have the object build the directory structure, if needed.
@@ -93,13 +122,13 @@ fun createPresenter(requiredName:String, packName:String) {
     outputFile.printWriter().use { out ->
         out.println("package "+usedPackageName)
         out.println("\nimport "+basePack+".ui.base.presenter.BasePresenterImpl")
-        out.println("import "+packName+".interactor.I"+requiredName+"Interactor")
-        out.println("import "+packName+".view.I"+requiredName+"View")
+        out.println("import "+packName+".interactor.I"+requiredFileName+"Interactor")
+        out.println("import "+packName+".view.I"+requiredFileName+"View")
         out.println("import "+basePack+".util.SchedulerProvider")
         out.println("import io.reactivex.disposables.CompositeDisposable")
         out.println("import javax.inject.Inject\n")
 
-        out.println("class "+requiredName+"PresenterImpl<V : I"+ requiredName+"View, I : I"+requiredName+"Interactor> @Inject internal constructor(interactor: I, schedulerProvider: SchedulerProvider, disposable: CompositeDisposable) : BasePresenterImpl<V, I>(interactor = interactor, schedulerProvider = schedulerProvider, compositeDisposable = disposable), I"+requiredName+"Presenter<V, I> {"+
+        out.println("class "+requiredFileName+"PresenterImpl<V : I"+ requiredFileName+"View, I : I"+requiredFileName+"Interactor> @Inject internal constructor(interactor: I, schedulerProvider: SchedulerProvider, disposable: CompositeDisposable) : BasePresenterImpl<V, I>(interactor = interactor, schedulerProvider = schedulerProvider, compositeDisposable = disposable), I"+requiredFileName+"Presenter<V, I> {"+
                 "\n"
                 +"}")
     }
@@ -107,30 +136,32 @@ fun createPresenter(requiredName:String, packName:String) {
     output2File.printWriter().use { out ->
         out.println("package "+usedPackageName)
         out.println("\nimport "+basePack+".ui.base.presenter.IPresenter")
-        out.println("import "+packName+".interactor.I"+requiredName+"Interactor")
-        out.println("import "+packName+".view.I"+requiredName+"View\n")
+        out.println("import "+packName+".interactor.I"+requiredFileName+"Interactor")
+        out.println("import "+packName+".view.I"+requiredFileName+"View\n")
 
-        out.println("interface I"+requiredName+"Presenter<V : I"+requiredName+"View, I : I"+requiredName+"Interactor> : IPresenter<V, I> {\n" +
+        out.println("interface I"+requiredFileName+"Presenter<V : I"+requiredFileName+"View, I : I"+requiredFileName+"Interactor> : IPresenter<V, I> {\n" +
                 "}")
 
     }
 
 }
-fun createView(requiredName:String, packName:String, layoutName:String) {
+
+fun createView(requiredFileName:String, packName:String, currentPath: String, layoutName:String, isFragment:String) {
     var basePack= packName.substring(0,packName.indexOf(".ui"))
     var usedPackageName = packName+".view";
 
-    var filename = requiredName+"Activity.kt"
+    var filename= ""
+    filename = if(isFragment!="0")
+        requiredFileName+"Fragment.kt"
+    else
+        requiredFileName+"Activity.kt"
 
-    var file2name = "I"+requiredName+"View.kt"
-    // create a File object for the parent directory
-    val currentPath = System.getProperty("user.dir")
+    var file2name = "I"+requiredFileName+"View.kt"
 
     val pathName= currentPath+"/view"
     val wallpaperDirectory = File(pathName)
-    // have the object build the directory structure, if needed.
     wallpaperDirectory.mkdirs()
-    // create a File object for the output file
+
     val outputFile = File(wallpaperDirectory, filename)
     val output2File = File(wallpaperDirectory, file2name)
 
@@ -144,12 +175,13 @@ fun createView(requiredName:String, packName:String, layoutName:String) {
 
     //fill the files
 
-    outputFile.printWriter().use { out ->
+    if(isFragment=="0")
+         outputFile.printWriter().use { out ->
         out.println("package "+usedPackageName)
         out.println("\nimport "+basePack+".R")
         out.println("import "+basePack+".ui.base.view.BaseActivity")
-        out.println("import "+packName+".interactor.I"+requiredName+"Interactor")
-        out.println("import "+packName+".presenter.I"+requiredName+"Presenter")
+        out.println("import "+packName+".interactor.I"+requiredFileName+"Interactor")
+        out.println("import "+packName+".presenter.I"+requiredFileName+"Presenter")
         out.println("import "+basePack+".util.extension.removeFragment")
 
         out.println("import android.os.Bundle\n" +
@@ -158,10 +190,10 @@ fun createView(requiredName:String, packName:String, layoutName:String) {
                 "import dagger.android.DispatchingAndroidInjector\n" +
                 "import dagger.android.support.HasSupportFragmentInjector\n" +
                 "import javax.inject.Inject\n")
-        out.println("class "+requiredName+"Activity : BaseActivity(), I"+requiredName+"GasolineView, HasSupportFragmentInjector {\n" +
+        out.println("class "+requiredFileName+"Activity : BaseActivity(), I"+requiredFileName+"View, HasSupportFragmentInjector {\n" +
                 "\n" +
                 "    @Inject\n" +
-                "    internal lateinit var presenter: I"+requiredName+"Presenter<I"+requiredName+"View, I"+requiredName+"Interactor>\n" +
+                "    internal lateinit var presenter: I"+requiredFileName+"Presenter<I"+requiredFileName+"View, I"+requiredFileName+"Interactor>\n" +
                 "    @Inject\n" +
                 "    internal lateinit var fragmentDispatchingAndroidInjector: DispatchingAndroidInjector<Fragment>" +
                 "    \n\n" +
@@ -184,20 +216,71 @@ fun createView(requiredName:String, packName:String, layoutName:String) {
                 "\n" +
                 "}\n")
     }
+    else
+        outputFile.printWriter().use { out ->
+            out.println("package "+usedPackageName)
+            out.println("\nimport "+basePack+".R")
+            out.println("import "+basePack+".ui.base.view.BaseFragment")
+            out.println("import "+packName+".interactor.I"+requiredFileName+"Interactor")
+            out.println("import "+packName+".presenter.I"+requiredFileName+"Presenter")
+
+            out.println("import android.os.Bundle\n" +
+                    "import android.view.LayoutInflater\n"+
+                    "import android.view.View\n" +
+                    "import android.view.ViewGroup\n" +
+                    "import javax.inject.Inject\n")
+
+            out.println("class "+requiredFileName+"Fragment : BaseFragment(), I"+requiredFileName+"View {\n" +
+                    "\n" +
+                    "    @Inject\n" +
+                    "    internal lateinit var presenter: I"+requiredFileName+"Presenter<I"+requiredFileName+"View, I"+requiredFileName+"Interactor>\n" +
+                    "    companion object {\n" +
+                    "        fun newInstance(): "+requiredFileName+"Fragment {\n" +
+                    "            val args: Bundle = Bundle()\n" +
+                    "            val fragment = "+requiredFileName+"Fragment()\n" +
+                    "            fragment.arguments = args\n" +
+                    "            return fragment\n" +
+                    "        }\n" +
+                    "    }\n"+
+                    " override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,\n" +
+                    "                              savedInstanceState: Bundle?): View? {\n" +
+                    "        // Inflate the layout for this fragment\n" +
+                    "        val view = inflater.inflate(R.layout."+layoutName+", container, false)\n" +
+                    "        return view\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {\n" +
+                    "        presenter.onAttach(this)\n" +
+                    "        super.onViewCreated(view, savedInstanceState)\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    override fun onDestroy() {\n" +
+                    "        presenter.onDetach()\n" +
+                    "        super.onDestroy()\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    override fun setUp() {\n" +
+                    "\n" +
+                    "    }\n" +
+                    "\n" +
+                    "}\n")
+        }
+
     output2File.printWriter().use { out ->
         out.println("package "+usedPackageName)
         out.println("\nimport ae.adnoc.gov.ui.base.view.IView\n")
-        out.println("interface "+"I"+requiredName+"View : IView {\n" +
+        out.println("interface "+"I"+requiredFileName+"View : IView {\n" +
                 "}")
     }
 
+
+
 }
 
-fun createActivityModule(requiredName:String, packName:String){
+fun createActivityModule(requiredFileName:String, packName:String, currentPath: String){
 
-    var filename = requiredName+"ActivityModule.kt"
+    var filename = requiredFileName+"ActivityModule.kt"
 
-    val currentPath = System.getProperty("user.dir")
     val wallpaperDirectory = File(currentPath)
     wallpaperDirectory.mkdirs()
     val outputFile = File(wallpaperDirectory, filename)
@@ -212,43 +295,37 @@ fun createActivityModule(requiredName:String, packName:String){
 
     outputFile.printWriter().use { out ->
         out.println("package "+packName)
-        out.println("\nimport "+packName+".interactor."+requiredName+"InteractorImpl")
-        out.println("import "+packName+".interactor."+"I"+requiredName+"Interactor")
-        out.println("import "+packName+".presenter."+requiredName+"PresenterImpl")
-        out.println("import "+packName+".presenter."+"I"+requiredName+"Presenter")
-        out.println("import "+packName+".view."+"I"+requiredName+"View")
+        out.println("\nimport "+packName+".interactor."+requiredFileName+"InteractorImpl")
+        out.println("import "+packName+".interactor."+"I"+requiredFileName+"Interactor")
+        out.println("import "+packName+".presenter."+requiredFileName+"PresenterImpl")
+        out.println("import "+packName+".presenter."+"I"+requiredFileName+"Presenter")
+        out.println("import "+packName+".view."+"I"+requiredFileName+"View")
         out.println("import dagger.Module\n" +
                 "import dagger.Provides\n")
 
-
         out.println("@Module\n" +
-                "class "+requiredName+ "ActivityModule {\n" +
+                "class "+requiredFileName+ "ActivityModule {\n" +
                 "\n" +
                 "    @Provides\n" +
-                "    internal fun provide"+requiredName+"Interactor("+requiredName+"InteractorImpl: "+requiredName+"InteractorImpl): I"+requiredName+"Interactor = "+requiredName+"InteractorImpl" +
-                "\n" +
+                "    internal fun provide"+requiredFileName+"Interactor("+requiredFileName+"InteractorImpl: "+requiredFileName+"InteractorImpl): I"+requiredFileName+"Interactor = "+requiredFileName+"InteractorImpl" +
+                "\n\n" +
                 "    @Provides\n" +
-                "    internal fun provide"+requiredName+"Presenter("+requiredName+"PresenterImpl: "+requiredName+"PresenterImpl<I"+requiredName+"GasolineView, I"+requiredName+"Interactor>)\n" +
-                "            : I"+requiredName+"Presenter<I"+requiredName+"View, I"+requiredName+"Interactor> = "+requiredName+"PresenterImpl" +
+                "    internal fun provide"+requiredFileName+"Presenter("+requiredFileName+"PresenterImpl: "+requiredFileName+"PresenterImpl<I"+requiredFileName+"View, I"+requiredFileName+"Interactor>)\n" +
+                "            : I"+requiredFileName+"Presenter<I"+requiredFileName+"View, I"+requiredFileName+"Interactor> = "+requiredFileName+"PresenterImpl" +
                 "\n" +
                 "}")
     }
 
 }
 
-fun createFramentProv(requiredName: String, packName: String){
+fun createFramentProv(requiredFileName:String, packName:String, currentPath: String){
 
-    var filename = requiredName+"FragmentProvider.kt"
+    var filename = requiredFileName+"FragmentProvider.kt"
 
-    // create a File object for the parent directory
-    val currentPath = System.getProperty("user.dir")
     val wallpaperDirectory = File(currentPath)
-    // have the object build the directory structure, if needed.
     wallpaperDirectory.mkdirs()
-    // create a File object for the output file
     val outputFile = File(wallpaperDirectory, filename)
 
-    // now attach the OutputStream to the file object, instead of a String representation
     try {
         FileOutputStream(outputFile)
     } catch (e: FileNotFoundException) {
@@ -260,14 +337,14 @@ fun createFramentProv(requiredName: String, packName: String){
     outputFile.printWriter().use { out ->
         out.println("package " + packName)
 
-        out.println("\nimport "+packName+".view."+requiredName+"Fragment")
+        out.println("\nimport "+packName+".view."+requiredFileName+"Fragment")
         out.println("import dagger.Module")
         out.println("import dagger.android.ContributesAndroidInjector\n")
         out.println("@Module\n" +
-                "internal abstract class " + requiredName + "FragmentProvider {\n" +
+                "internal abstract class " + requiredFileName + "FragmentProvider {\n" +
                 "\n" +
-                "    @ContributesAndroidInjector(modules = [" + requiredName + "FragmentModule::class])\n" +
-                "    internal abstract fun provide" + requiredName + "FragmentFactory(): " + requiredName + "Fragment\n" +
+                "    @ContributesAndroidInjector(modules = [" + requiredFileName + "FragmentModule::class])\n" +
+                "    internal abstract fun provide" + requiredFileName + "FragmentFactory(): " + requiredFileName + "Fragment\n" +
                 "}")
     }
 
