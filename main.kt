@@ -189,7 +189,7 @@ fun createView(requiredFileName: String, packName: String, currentPath: String, 
             out.println("import " + basePack + ".util.extension.removeFragment")
 
             out.println("import android.os.Bundle\n" +
-                    "import android.support.v4.app.Fragment\n" +
+                    "import androidx.fragment.app.Fragment\n" +
                     "import dagger.android.AndroidInjector\n" +
                     "import dagger.android.DispatchingAndroidInjector\n" +
                     "import dagger.android.support.HasSupportFragmentInjector\n" +
@@ -204,6 +204,7 @@ fun createView(requiredFileName: String, packName: String, currentPath: String, 
                     "    override fun onCreate(savedInstanceState: Bundle?) {\n" +
                     "        super.onCreate(savedInstanceState)\n" +
                     "        setContentView(R.layout." + layoutName + ")\n" +
+                    "        presenter.onAttach(this) \n" +
                     "    }\n\n" +
                     "    override fun onFragmentAttached(tag: String?) {\n" +
                     "    }\n\n" +
@@ -272,7 +273,7 @@ fun createView(requiredFileName: String, packName: String, currentPath: String, 
 
     output2File.printWriter().use { out ->
         out.println("package " + usedPackageName)
-        out.println("\nimport ae.adnoc.gov.ui.base.view.IView\n")
+        out.println("import " + basePack + ".ui.base.view.IView")
         out.println("interface " + "I" + requiredFileName + "View : IView {\n" +
                 "}")
     }
